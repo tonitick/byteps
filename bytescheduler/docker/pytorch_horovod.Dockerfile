@@ -1,8 +1,13 @@
-FROM horovod/horovod:0.16.1-tf1.12.0-torch1.0.0-mxnet1.4.0-py2.7
+# FROM horovod/horovod:0.16.1-tf1.12.0-torch1.0.0-mxnet1.4.0-py2.7
+FROM horovod/horovod:0.18.0-tf1.14.0-torch1.2.0-mxnet1.5.0-py2.7
 
 ENV USE_BYTESCHEDULER=1
 ENV BYTESCHEDULER_WITH_PYTORCH=1
 ENV BYTESCHEDULER_WITHOUT_MXNET=1
+ENV  http_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV  https_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV  ftp_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV  gopher_proxy=http://proxy.cse.cuhk.edu.hk:8000/
 
 ARG HOROVOD_VERSION=b5cbf240909b467c348683c69df4d73f07147860
 
