@@ -1,9 +1,14 @@
-FROM horovod/horovod:0.16.1-tf1.12.0-torch1.0.0-mxnet1.4.0-py2.7
+# FROM horovod/horovod:0.16.1-tf1.12.0-torch1.0.0-mxnet1.4.0-py2.7
+FROM horovod/horovod:0.18.0-tf1.14.0-torch1.2.0-mxnet1.5.0-py2.7
 
 ENV USE_BYTESCHEDULER=1
 ENV BYTESCHEDULER_WITH_MXNET=1
 ENV BYTESCHEDULER_WITHOUT_PYTORCH=1
 ENV MXNET_ROOT=/root/incubator-mxnet
+ENV http_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV https_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV ftp_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV gopher_proxy=http://proxy.cse.cuhk.edu.hk:8000/
 
 WORKDIR /root/
 
@@ -46,8 +51,13 @@ RUN cd incubator-mxnet && git reset --hard 75a9e187d00a8b7ebc71412a02ed0e3ae489d
 
 # Install ByteScheduler
 RUN pip install bayesian-optimization
-RUN git clone --branch bytescheduler --recursive https://github.com/bytedance/byteps.git && \
-    cd byteps/bytescheduler && python setup.py install
+# RUN git clone --branch bytescheduler --recursive https://github.com/bytedance/byteps.git && \
+#     cd byteps/bytescheduler && python setup.py install
+# 
 
-# Examples
-WORKDIR /root/byteps/bytescheduler/examples/mxnet-image-classification
+# # Examples
+# WORKDIR /root/byteps/bytescheduler/examples/mxnet-image-classification
+
+# # Run
+# RUN mpirun --allow-run-as-root -np 2 -H localhost:2 -bind-to none -map-by slot -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH -mca pml ob1 -mca btl ^openib python train_imagenet_horovod.py --network resnet --num-layers 18 --benchmark 1 --kv-store dist_sync --batch-size 16 --disp-batches 10 --num-examples 1000 --num-epochs 100
+
