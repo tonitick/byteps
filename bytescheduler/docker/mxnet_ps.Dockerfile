@@ -1,10 +1,15 @@
-FROM nvidia/cuda:9.0-cudnn7-devel
+# FROM nvidia/cuda:9.0-cudnn7-devel
+FROM nvidia/cuda:10.0-cudnn7-devel
 
 ENV USE_BYTESCHEDULER=1
 ENV BYTESCHEDULER_WITH_MXNET=1
 ENV BYTESCHEDULER_WITHOUT_PYTORCH=1
 ENV MXNET_ROOT=/root/incubator-mxnet
 ENV LD_LIBRARY_PATH="/usr/local/cuda/lib64:${LD_LIBRARY_PATH}"
+ENV http_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV https_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV ftp_proxy=http://proxy.cse.cuhk.edu.hk:8000/
+ENV gopher_proxy=http://proxy.cse.cuhk.edu.hk:8000/
 
 WORKDIR /root
 
@@ -44,7 +49,7 @@ RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 200 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 200 && \
     update-alternatives --install /usr/bin/x86_64-linux-gnu-g++ x86_64-linux-gnu-g++ /usr/bin/g++-4.9 200
 
-RUN pip install mxnet-cu90==1.5.0
+RUN pip install mxnet-cu100==1.5.0
 
 # Clone MXNet as ByteScheduler compilation needs header files
 RUN git clone --recursive --branch v1.5.x https://github.com/apache/incubator-mxnet.git
@@ -59,3 +64,7 @@ RUN rm -f /usr/local/cuda/lib64/libcuda.so.1
 
 # Examples
 WORKDIR /root/byteps/bytescheduler/examples/mxnet-image-classification
+
+# Run
+RUN chmod +x local.sh run.sh
+RUN ./local.sh 1 1  python train_imagenet.py --network resnet --num-layers 18 --benchmark 1 --kv-store dist_sync --batch-size 32 --disp-batches 10 --num-examples 1000 --num-epochs 1 --gpus 2
