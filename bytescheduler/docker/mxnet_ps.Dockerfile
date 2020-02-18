@@ -65,6 +65,6 @@ RUN rm -f /usr/local/cuda/lib64/libcuda.so.1
 # Examples
 WORKDIR /root/byteps/bytescheduler/examples/mxnet-image-classification
 
-# Run
-RUN chmod +x local.sh run.sh
-RUN ./local.sh 1 1  python train_imagenet.py --network resnet --num-layers 18 --benchmark 1 --kv-store dist_sync --batch-size 32 --disp-batches 10 --num-examples 1000 --num-epochs 1 --gpus 2
+# # Run
+# RUN chmod +x local.sh run.sh
+# RUN ./local.sh 1 1  python train_imagenet.py --network resnet --num-layers 18 --benchmark 1 --kv-store dist_sync --batch-size 32 --disp-batches 10 --num-examples 1000 --num-epochs 100 --gpus 2

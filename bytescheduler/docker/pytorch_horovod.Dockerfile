@@ -25,3 +25,6 @@ RUN pip install bayesian-optimization && cd byteps/bytescheduler && python setup
 
 # Examples
 WORKDIR /root/byteps/bytescheduler/examples/
+
+# # Run
+# mpirun --allow-run-as-root -np 2 -H localhost:2 -bind-to none -map-by slot -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH -mca pml ob1 -mca btl ^openib python pytorch_horovod_benchmark.py --num-iters 100
