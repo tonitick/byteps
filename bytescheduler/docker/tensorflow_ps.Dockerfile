@@ -47,9 +47,10 @@ RUN pip install --upgrade enum34
 
 # Build and install
 RUN git clone --branch r1.13 https://github.com/tensorflow/tensorflow.git
-RUN git clone --branch bytescheduler --recursive https://github.com/bytedance/byteps.git
+# RUN git clone --branch bytescheduler --recursive https://github.com/bytedance/byteps.git
+RUN git clone --branch dev --recursive https://github.com/tonitick/byteps.git
 RUN cp byteps/bytescheduler/bytescheduler/tensorflow/tf.patch tensorflow/ && cd tensorflow && echo "" >> tf.patch && git apply tf.patch
-RUN cd tensorflow && bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
+RUN cd tensorflow && ./configure bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
 RUN cd tensorflow && ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
 RUN pip install /tmp/tensorflow_pkg/tensorflow-1.13.2-cp27-cp27mu-linux_x86_64.whl
 RUN cd byteps/bytescheduler/bytescheduler/tensorflow/ && make
