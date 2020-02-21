@@ -1,23 +1,10 @@
-diff --git a/configure.py b/configure.py
-index 4f8cae2c57..b4de08007d 100644
---- a/configure.py
-+++ b/configure.py
-@@ -1604,7 +1604,7 @@ def main():
-     write_action_env_to_bazelrc('LD_LIBRARY_PATH',
-                                 environ_cp.get('LD_LIBRARY_PATH'))
- 
--  set_action_env_var(environ_cp, 'TF_NEED_CUDA', 'CUDA', False)
-+  set_action_env_var(environ_cp, 'TF_NEED_CUDA', 'CUDA', True)
-   if (environ_cp.get('TF_NEED_CUDA') == '1' and
-       'TF_CUDA_CONFIG_REPO' not in environ_cp):
-     set_tf_cuda_version(environ_cp)
 diff --git a/tensorflow/core/distributed_runtime/base_rendezvous_mgr.cc b/tensorflow/core/distributed_runtime/base_rendezvous_mgr.cc
-index de6e4b4a7c..3e5a4bf188 100644
+index 3bae8ecbb6..412f3f03cb 100644
 --- a/tensorflow/core/distributed_runtime/base_rendezvous_mgr.cc
 +++ b/tensorflow/core/distributed_runtime/base_rendezvous_mgr.cc
-@@ -102,6 +102,20 @@ Status BaseRendezvousMgr::RecvLocal(int64 step_id,
+@@ -101,6 +101,20 @@ Status BaseRendezvousMgr::RecvLocal(int64 step_id,
  }
- 
+
  void BaseRendezvousMgr::Cleanup(int64 step_id) {
 +  // Delay the cleanup by 1024 steps for ByteScheduler
 +  int64 step_to_clean;
@@ -37,22 +24,21 @@ index de6e4b4a7c..3e5a4bf188 100644
    {
      mutex_lock l(mu_);
 diff --git a/tensorflow/core/distributed_runtime/base_rendezvous_mgr.h b/tensorflow/core/distributed_runtime/base_rendezvous_mgr.h
-index c5a56f324a..e0656a49fd 100644
+index fde589b351..d232866cae 100644
 --- a/tensorflow/core/distributed_runtime/base_rendezvous_mgr.h
 +++ b/tensorflow/core/distributed_runtime/base_rendezvous_mgr.h
 @@ -16,6 +16,7 @@ limitations under the License.
  #ifndef TENSORFLOW_CORE_DISTRIBUTED_RUNTIME_BASE_RENDEZVOUS_MGR_H_
  #define TENSORFLOW_CORE_DISTRIBUTED_RUNTIME_BASE_RENDEZVOUS_MGR_H_
- 
+
 +#include <deque>
  #include <string>
  #include <unordered_set>
- 
+
 @@ -102,6 +103,7 @@ class BaseRendezvousMgr : public RendezvousMgrInterface {
    // Not owned.
    const WorkerEnv* const worker_env_;
- 
+
 +  std::deque<int64> steps_to_clean_ GUARDED_BY(mu_);
    mutex mu_;
    Table table_ GUARDED_BY(mu_);
- 

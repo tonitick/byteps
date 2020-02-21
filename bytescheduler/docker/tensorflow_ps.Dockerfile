@@ -16,7 +16,6 @@ WORKDIR /root
 # Install dev tools
 RUN apt-get update && apt-get install -y git python-dev build-essential
 RUN apt-get install -y wget && wget https://bootstrap.pypa.io/get-pip.py && python get-pip.py
-# RUN apt-get install apt-get install software-properties-common
 
 # Install gcc 4.8
 RUN apt -y install gcc-4.8
@@ -50,19 +49,20 @@ RUN git clone --branch r1.13 https://github.com/tensorflow/tensorflow.git
 # RUN git clone --branch bytescheduler --recursive https://github.com/bytedance/byteps.git
 RUN git clone --branch dev --recursive https://github.com/tonitick/byteps.git
 RUN cp byteps/bytescheduler/bytescheduler/tensorflow/tf.patch tensorflow/ && cd tensorflow && echo "" >> tf.patch && git apply tf.patch
-RUN cd tensorflow && ./configure bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
-RUN cd tensorflow && ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
-RUN pip install /tmp/tensorflow_pkg/tensorflow-1.13.2-cp27-cp27mu-linux_x86_64.whl
-RUN cd byteps/bytescheduler/bytescheduler/tensorflow/ && make
+# RUN cd tensorflow && ./configure
+# RUN cd tensorflow && bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
+# RUN cd tensorflow && ./bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
+# RUN pip install /tmp/tensorflow_pkg/tensorflow-1.13.2-cp27-cp27mu-linux_x86_64.whl
+# RUN cd byteps/bytescheduler/bytescheduler/tensorflow/ && make
+# 
+# # Benchmark
+# RUN git clone --branch cnn_tf_v1.13_compatible https://github.com/tensorflow/benchmarks.git
+# RUN cp byteps/bytescheduler/examples/tensorflow/benchmarks.patch benchmarks/
+# RUN cd benchmarks && git apply benchmarks.patch
+# RUN cp byteps/bytescheduler/bytescheduler/tensorflow/libplugin.so /root/benchmarks/scripts/tf_cnn_benchmarks
+# 
+# # Examples
+# WORKDIR /root/benchmarks/scripts/tf_cnn_benchmarks
 
-# Benchmark
-RUN git clone --branch cnn_tf_v1.13_compatible https://github.com/tensorflow/benchmarks.git
-RUN cp byteps/bytescheduler/examples/tensorflow/benchmarks.patch benchmarks/
-RUN cd benchmarks && git apply benchmarks.patch
-RUN cp byteps/bytescheduler/bytescheduler/tensorflow/libplugin.so /root/benchmarks/scripts/tf_cnn_benchmarks
-
-# Examples
-WORKDIR /root/benchmarks/scripts/tf_cnn_benchmarks
-
-# Run
-RUN python tf_cnn_benchmarks.py --num_gpus=4 --batch_size=32 --model=resnet50 --variable_update=parameter_server
+# # Run
+# RUN python tf_cnn_benchmarks.py --num_gpus=4 --batch_size=32 --model=resnet50 --variable_update=parameter_server
