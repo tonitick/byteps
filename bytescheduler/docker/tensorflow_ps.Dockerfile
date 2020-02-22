@@ -39,15 +39,15 @@ RUN chmod +x bazel-0.19.2-installer-linux-x86_64.sh
 RUN ./bazel-0.19.2-installer-linux-x86_64.sh
 
 # Pip dependencies
-RUN pip install -U --user pip six numpy wheel setuptools mock 'future>=0.17.1'
-RUN pip install -U --user keras_applications --no-deps
-RUN pip install -U --user keras_preprocessing --no-deps
-RUN pip install --upgrade enum34
+RUN pip install -U pip six numpy wheel setuptools mock 'future>=0.17.1'
+RUN pip install -U keras_applications --no-deps
+RUN pip install -U keras_preprocessing --no-deps
+RUN pip install enum34==1.1.6
 
 # Build and install
 RUN git clone --branch r1.13 https://github.com/tensorflow/tensorflow.git
 # RUN git clone --branch bytescheduler --recursive https://github.com/bytedance/byteps.git
-RUN git clone --branch dev --recursive https://github.com/tonitick/byteps.git
+RUN git clone --branch dev https://github.com/tonitick/byteps.git
 RUN cp byteps/bytescheduler/bytescheduler/tensorflow/tf.patch tensorflow/ && cd tensorflow && echo "" >> tf.patch && git apply tf.patch
 # RUN cd tensorflow && ./configure
 # RUN cd tensorflow && bazel build --config=opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
