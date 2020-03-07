@@ -10,6 +10,8 @@ import horovod.torch as hvd
 import timeit
 import numpy as np
 import os
+import torchvision.transforms as transforms
+import torchvision
 
 # Benchmark settings
 parser = argparse.ArgumentParser(description='PyTorch Synthetic Benchmark',
@@ -82,23 +84,47 @@ hvd.broadcast_parameters(model.state_dict(), root_rank=0)
 hvd.broadcast_optimizer_state(optimizer, root_rank=0)
 
 # Set up fake data
-datasets = []
-for _ in range(100):
-    data = torch.rand(args.batch_size, 3, 224, 224)
-    target = torch.LongTensor(args.batch_size).random_() % 1000
-    # if args.cuda:
-    #     data, target = data.cuda(), target.cuda()
-    if args.cuda:
-        target = target.cuda()
-    datasets.append(data)
+dataset = []
+targetset = []
+# for _ in range(100):
+#     data = torch.rand(args.batch_size, 3, 224, 224)
+#     target = torch.LongTensor(args.batch_size).random_() % 1000
+#     # if args.cuda:
+#     #     data, target = data.cuda(), target.cuda()
+#     if args.cuda:
+#         target = target.cuda()
+#     dataset.append(data)
 data_index = 0
+
+
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+
+if hvd.local_rank() == 0:
+    trainset = torchvision.datasets.CIFAR10(root='./data1', train=True, download=True, transform=transform_train)
+else:
+    trainset = torchvision.datasets.CIFAR10(root='./data2', train=True, download=True, transform=transform_train)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
+
+for batch_idx, (inputs, targets) in enumerate(trainloader):
+    dataset.append(inputs)
+    targetset.append(targets)
 
 def benchmark_step():
     global data_index
+    global dataset
+    global targetset
 
-    data = datasets[data_index%len(datasets)]
+    data = dataset[data_index%len(dataset)]
     if args.cuda:
         data = data.cuda()
+    target = targetset[data_index%len(targetset)]
+    if args.cuda:
+        target = target.cuda()
     data_index += 1
     optimizer.zero_grad()
     output = model(data)
