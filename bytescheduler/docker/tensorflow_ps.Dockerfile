@@ -65,4 +65,4 @@ RUN cp byteps/bytescheduler/bytescheduler/tensorflow/tf.patch tensorflow/ && cd 
 # WORKDIR /root/benchmarks/scripts/tf_cnn_benchmarks
 
 # # Run
-# RUN python tf_cnn_benchmarks.py --num_gpus=4 --batch_size=32 --model=resnet50 --variable_update=parameter_server
+# RUN python tf_cnn_benchmarks.py --num_gpus=2 --batch_size=32 --model=resnet50 --num_epochs=90 --variable_update=parameter_server
