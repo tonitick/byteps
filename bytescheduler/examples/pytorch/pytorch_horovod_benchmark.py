@@ -104,10 +104,7 @@ transform_train = transforms.Compose([
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
 
-if hvd.local_rank() == 0:
-    trainset = torchvision.datasets.CIFAR10(root='./data1', train=True, download=True, transform=transform_train)
-else:
-    trainset = torchvision.datasets.CIFAR10(root='./data2', train=True, download=True, transform=transform_train)
+trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform_train)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=0)
 
 for batch_idx, (inputs, targets) in enumerate(trainloader):
@@ -157,7 +154,7 @@ with torch.autograd.profiler.profile(enable_profiling, True) as prof:
     for x in range(args.num_iters):
         time = timeit.timeit(benchmark_step, number=args.num_batches_per_iter)
         img_sec = args.batch_size * args.num_batches_per_iter / time
-        log('Iter #%d: %.1f img/sec per %s' % (x, img_sec, device))
+        log('Iter #%d: %.2f img/sec per %s' % (x, img_sec, device))
         img_secs.append(img_sec)
 if enable_profiling:
     prof.export_chrome_trace(os.path.join('pytorch-trace', args.model+'-'+str(hvd.rank()) +'.json'))
@@ -165,7 +162,6 @@ if enable_profiling:
 # Results
 img_sec_mean = np.mean(img_secs)
 img_sec_conf = 1.96 * np.std(img_secs)
-log('Img/sec per %s: %.1f +-%.1f' % (device, img_sec_mean, img_sec_conf))
-log('Total img/sec on %d %s(s): %.1f +-%.1f' %
+log('Img/sec per %s: %.2f +-%.2f' % (device, img_sec_mean, img_sec_conf))
+log('Total img/sec on %d %s(s): %.2f +-%.2f' %
     (hvd.size(), device, hvd.size() * img_sec_mean, hvd.size() * img_sec_conf))
-
