@@ -128,6 +128,7 @@ def benchmark_step():
     loss = F.cross_entropy(output, target)
     loss.backward()
     optimizer.step()
+    # print(loss)
 
 
 def log(s, nl=True):
