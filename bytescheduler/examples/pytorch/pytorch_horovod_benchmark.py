@@ -145,6 +145,8 @@ log('Number of %ss: %d' % (device, hvd.size()))
 # Warm-up
 log('Running warmup...')
 timeit.timeit(benchmark_step, number=args.num_warmup_batches)
+log('Warmup time: %.2fs' % (time))
+log('Warmup end timestamp: %s' % (datetime.now().strftime("%s")))
 
 # Benchmark
 log('Running benchmark...')
