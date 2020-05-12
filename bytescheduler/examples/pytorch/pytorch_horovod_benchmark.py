@@ -13,6 +13,8 @@ import os
 import torchvision.transforms as transforms
 import torchvision
 
+from datetime import datetime
+
 # Benchmark settings
 parser = argparse.ArgumentParser(description='PyTorch Synthetic Benchmark',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -62,7 +64,8 @@ if args.cuda:
 optimizer = optim.SGD(model.parameters(), lr=0.01)
 
 # Horovod: (optional) compression algorithm.
-compression = hvd.Compression.fp16 if args.fp16_allreduce else hvd.Compression.none
+# compression = hvd.Compression.fp16 if args.fp16_allreduce else hvd.Compression.none
+compression = hvd.Compression.none
 
 # bytescheduler wrapper
 use_bytescheduler = int(os.environ.get('USE_BYTESCHEDULER', '0'))
@@ -76,6 +79,7 @@ if use_bytescheduler > 0:
 optimizer = hvd.DistributedOptimizer(optimizer,
                                      named_parameters=model.named_parameters(),
                                      compression=compression)
+
 if use_bytescheduler > 0:
     optimizer = bsc.ScheduledOptimizer(model, optimizer, args.num_warmup_batches + args.num_iters * args.num_batches_per_iter)
 
@@ -127,8 +131,8 @@ def benchmark_step():
     output = model(data)
     loss = F.cross_entropy(output, target)
     loss.backward()
+    # print(loss) # convergence check
     optimizer.step()
-    # print(loss)
 
 
 def log(s, nl=True):
@@ -144,24 +148,20 @@ log('Number of %ss: %d' % (device, hvd.size()))
 
 # Warm-up
 log('Running warmup...')
-timeit.timeit(benchmark_step, number=args.num_warmup_batches)
+time = timeit.timeit(benchmark_step, number=args.num_warmup_batches)
 log('Warmup time: %.2fs' % (time))
 log('Warmup end timestamp: %s' % (datetime.now().strftime("%s")))
 
 # Benchmark
 log('Running benchmark...')
 img_secs = []
-enable_profiling = args.profiler & (hvd.rank() == 0)
 
-with torch.autograd.profiler.profile(enable_profiling, True) as prof:
-    for x in range(args.num_iters):
-        time = timeit.timeit(benchmark_step, number=args.num_batches_per_iter)
-        img_sec = args.batch_size * args.num_batches_per_iter / time
-        log('Iter #%d: %.2f img/sec per %s' % (x, img_sec, device))
-        img_secs.append(img_sec)
-if enable_profiling:
-    prof.export_chrome_trace(os.path.join('pytorch-trace', args.model+'-'+str(hvd.rank()) +'.json'))
-    # print(prof)
+for x in range(args.num_iters):
+    time = timeit.timeit(benchmark_step, number=args.num_batches_per_iter)
+    img_sec = args.batch_size * args.num_batches_per_iter / time
+    log('Iter #%d: %.2f img/sec per %s' % (x, img_sec, device))
+    img_secs.append(img_sec)
+
 # Results
 img_sec_mean = np.mean(img_secs)
 img_sec_conf = 1.96 * np.std(img_secs)
