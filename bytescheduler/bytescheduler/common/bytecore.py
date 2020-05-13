@@ -171,7 +171,9 @@ class ByteCore(object):
 
             # Partition a task if its tensor is larger than a threshold.
             if task.tensor_size() > self._partition:
+                self._logger.info("core {}: start partition task.".format(self._rank))
                 subtasks = task.partition(size=self._partition)
+                self._logger.info("core {}: finish partition task.".format(self._rank))
             else:
                 subtasks = [task]
 
