@@ -82,9 +82,10 @@ optimizer = hvd.DistributedOptimizer(optimizer,
 
 if use_bytescheduler > 0:
     optimizer = bsc.ScheduledOptimizer(model, optimizer, args.num_warmup_batches + args.num_iters * args.num_batches_per_iter)
-print("start broadcast")
+print("start broadcast paramters")
 # Horovod: broadcast parameters & optimizer state.
 hvd.broadcast_parameters(model.state_dict(), root_rank=0)
+print("start broadcast state")
 hvd.broadcast_optimizer_state(optimizer, root_rank=0)
 print("end broadcast")
 # Set up fake data
