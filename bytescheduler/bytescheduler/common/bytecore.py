@@ -21,6 +21,8 @@ class ByteCore(object):
     allreduce), it partitions the ByteTask and decides when to send each partition according to priority."""
 
     def __init__(self, logger=None):
+        self.max_partition_size = 0.0
+        self.min_partition_size = 1e100
         """
         Args:
             logger: ByteScheduler logger object
@@ -146,6 +148,10 @@ class ByteCore(object):
         self._logger.info("shutdown Core {}.".format(self._rank))
 
     def post(self, task):
+        if task.tensor_size() > self.max_partition_size:
+            self.max_partition_size = task.tensor_size()
+        if task.tensor_size() < self.min_partition_size:
+            self.min_partition_size = task.tensor_size()
         """Post a communication task to Core for scheduling.
         Args:
             task: a ByteTask object

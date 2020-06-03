@@ -168,3 +168,6 @@ img_sec_conf = 1.96 * np.std(img_secs)
 log('Img/sec per %s: %.2f +-%.2f' % (device, img_sec_mean, img_sec_conf))
 log('Total img/sec on %d %s(s): %.2f +-%.2f' %
     (hvd.size(), device, hvd.size() * img_sec_mean, hvd.size() * img_sec_conf))
+
+log("max partition size: %d" % bsc.core.max_partition_size)
+log("min partition size: %d" % bsc.core.min_partition_size)
