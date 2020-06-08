@@ -7,10 +7,10 @@ iters="5"
 ngpu="2"
 nproc=$(($ngpu + $ngpu))
 netif="eno1"
-sleeptime=300
+sleeptime=3000
 # for model in vgg16 resnet50 resnet101 resnet152 densenet121 densenet201 densenet169 
-for model in resnet18 resnet50 resnet152 densenet121 densenet201 vgg16
-# for model in vgg16
+# for model in resnet18 resnet50 resnet152 densenet121 densenet201 vgg16
+for model in vgg16
 # for model in resnet152 densenet201 resnet50 resnet101 densenet121 densenet169
 do
 	# for credit in 4000000 2000000 1000000 8000000 400000 
@@ -43,15 +43,17 @@ do
 
 		# for partition in 90000
 		# for partition in 80000
-		for partition in 70000 60000 50000 40000 30000 20000 10000 110000 120000 130000 140000 150000 160000 170000 180000 190000
+		# for partition in 70000 60000 50000 40000 30000 20000 10000 110000 120000 130000 140000 150000 160000 170000 180000 190000
 
 		# for partition in 100000000 90000000 80000000 70000000 60000000 50000000 40000000 30000000 20000000
+		# for partition in 70000 80000 90000 100000
+		for partition in 70000
 		do
 			mkdir -p ${profdir}/result_pytorch_horovod_single_${ngpu}gpupm_${nproc}proc_cs${credit}_ps${partition}/throughput
     		export CUDA_VISIBLE_DEVICES=2,3
 			export BYTESCHEDULER_CREDIT=${credit}
 			export BYTESCHEDULER_PARTITION=${partition}
-			mpirun --mca oob_tcp_if_include ${netif} --mca btl_tcp_if_include ${netif} -np ${nproc} -H proj54:${ngpu},proj55:${ngpu} -bind-to none -map-by slot -x NCCL_SOCKET_IFNAME=${netif} -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH -x USE_BYTESCHEDULER -x BYTESCHEDULER_CREDIT_TUNING -x BYTESCHEDULER_CREDIT -x BYTESCHEDULER_PARTITION -x CUDA_VISIBLE_DEVICES -mca pml ob1 -mca btl ^openib python pytorch_horovod_benchmark.py --num-iters ${iters} --model=$model --batch-size 32 >  ${profdir}/result_pytorch_horovod_single_${ngpu}gpupm_${nproc}proc_cs${credit}_ps${partition}/throughput/${model}.txt &
+			mpirun --mca oob_tcp_if_include ${netif} --mca btl_tcp_if_include ${netif} -np ${nproc} -H proj54:${ngpu},proj55:${ngpu} -bind-to none -map-by slot -x NCCL_SOCKET_IFNAME=${netif} -x NCCL_DEBUG=INFO -x LD_LIBRARY_PATH -x PATH -x USE_BYTESCHEDULER -x BYTESCHEDULER_CREDIT_TUNING -x BYTESCHEDULER_CREDIT -x BYTESCHEDULER_PARTITION -x CUDA_VISIBLE_DEVICES -mca pml ob1 -mca btl ^openib python pytorch_horovod_benchmark.py --num-iters ${iters} --model=$model --batch-size 32 > ${profdir}/result_pytorch_horovod_single_${ngpu}gpupm_${nproc}proc_cs${credit}_ps${partition}/throughput/${model}.txt &
 			pid1=$!
 			echo "pid1=${pid1}"
 
