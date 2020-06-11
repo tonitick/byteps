@@ -78,6 +78,7 @@ class ByteCore(object):
         # hyper parameters of auto-tuning.
         self._current_point = {
             "credit": self._credit,
+            "partition": self._partition,
         }
         self._next_point = None
 
