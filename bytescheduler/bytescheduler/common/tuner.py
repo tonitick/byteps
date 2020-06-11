@@ -35,10 +35,11 @@ class Tuner(object):
         else:
             self._logger = logger
         # self._tuner = None
-        if partition_tuning:
-            self._comm = create_comm(rank=self._rank)
-        else:
-            self._comm = create_comm(rank=self._rank, host="localhost", port=58888)
+        # if partition_tuning:
+        #     self._comm = create_comm(rank=self._rank)
+        # else:
+        #     self._comm = create_comm(rank=self._rank, host="localhost", port=58888)
+        self._comm = create_comm(rank=self._rank)
         self._exit = False
         self._timestamps = []
         self._effective_point = None
