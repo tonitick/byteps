@@ -61,7 +61,7 @@ class Tuner(object):
 
         self.avg_duration = None
         self.avg_count = 0
-        self.tune_thres = 0.05
+        self.tune_thres = float(os.environ.get('BYTESCHEDULER_TUNE_THRES', 0.05))
 
     def next_point(self):
         """Core will call this function at the beginning of each step
