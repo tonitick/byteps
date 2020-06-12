@@ -78,7 +78,7 @@ class Tuner(object):
         return point
 
     def record(self, current_point, step):
-        print("[Tunner] record(): step = %d"%(step))
+        # print("[Tunner] record(): step = %d"%(step))
         """The scheduler will call this function at the beginning of each step,
         so that the tuner can collect timestamp information and derive feedback (i.e., duration of one training step).
         """
@@ -96,30 +96,30 @@ class Tuner(object):
         self._comm.shutdown()
 
     def _tune(self, current_point, step):
-        print("[Tunner] _tune(): step = %d"%(step))
+        # print("[Tunner] _tune(): step = %d"%(step))
         """Run one step tuning."""
         step_durations = []
-        print("[Tunner] len(self._timestamps) = %d"%(len(self._timestamps)))
-        print(self._timestamps)
+        # print("[Tunner] len(self._timestamps) = %d"%(len(self._timestamps)))
+        # print(self._timestamps)
         
         # calculate durations
         for i in range(len(self._timestamps) - 1):
             step_durations.append(self._timestamps[i + 1] - self._timestamps[i])
             # continue
-        print(step_durations)
+        # print(step_durations)
         if step_durations:
             # next_point = None
             self._timestamps = []
             avg_step_duration = sum(step_durations) / len(step_durations)
             self.avg_count = self.avg_count + len(step_durations)
-            print("[Tunner] self.avg_count")
-            print(self.avg_count)
+            # print("[Tunner] self.avg_count")
+            # print(self.avg_count)
             if self.avg_duration is None:
                 self.avg_duration = avg_step_duration
             elif avg_step_duration < (self.avg_duration * (1 + self.tune_thres)):
-                print("[Tunner] additive-increase")
-                print("self.avg_duration")
-                print(self.avg_duration)
+                # print("[Tunner] additive-increase")
+                # print("self.avg_duration")
+                # print(self.avg_duration)
                 self.avg_duration = (self.avg_duration * self.avg_count + avg_step_duration * len(step_durations)) / (self.avg_count + len(step_durations))
                 self.avg_count = self.avg_count + len(step_durations)
                 # print("[Tunner] exit point 1")
@@ -128,12 +128,12 @@ class Tuner(object):
                 # print(next_point)
                 next_point["credit"] = next_point["credit"] + next_point["partition"] # additive-increase
                 next_point["step"] = step + 1 # tune in next 2 iter
-                print("[Tunner] exit point 2")
+                # print("[Tunner] exit point 2")
                 self._comm.broadcast(next_point)
-                print("[Tunner] exit point 3")
+                # print("[Tunner] exit point 3")
             
             elif avg_step_duration > (self.avg_duration * (1 + self.tune_thres)):
-                print("[Tunner] multiplicative-decrease")
+                # print("[Tunner] multiplicative-decrease")
                 # throughput degradation larger than threshold, possibly networking status change
                 next_point = current_point
                 next_point["credit"] = next_point["credit"] * self.avg_duration / avg_step_duration # multiplicative-decrease
@@ -143,8 +143,8 @@ class Tuner(object):
                 self.avg_count = 0
 
                 self._comm.broadcast(next_point)
-            print("[Tunner] exit point 3")
-        print("[Tunner] _tune(): done")
+        #     print("[Tunner] exit point 3")
+        # print("[Tunner] _tune(): done")
             # point = {}
             # for k in current_point:
             #     if k == "step":
