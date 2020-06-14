@@ -45,23 +45,10 @@ class Tuner(object):
         self._effective_point = None
         self.stopped = False
 
-        # # Credit and partition in terms of million parameters.
-        # space = dict()
-        # if credit_tuning:
-        #     if arch == "ps":
-        #         space["credit"] = (1.0, 16.0)
-        #     else:
-        #         space["credit"] = (4.0, 64.0)
-
-        # if partition_tuning:
-        #     space["partition"] = (2.0, 32.0)
-
-        # max_num_steps = 15
-        # self._tuner = BayesianSearch(space=space, max_num_steps=max_num_steps)
-
         self.avg_duration = None
         self.avg_count = 0
-        self.tune_thres = float(os.environ.get('BYTESCHEDULER_TUNE_THRES', 0.05))
+        self.tune_thres = float(os.environ.get('BYTESCHEDULER_TUNE_THRES', 0.0))
+        self.ss_thres = float(os.environ.get('SLOW_START_THRES', 1.6667))
 
     def next_point(self):
         """Core will call this function at the beginning of each step
@@ -88,7 +75,7 @@ class Tuner(object):
             self._timestamps.append(time.time())
 
             # require at least 2 timestamps to calculating differences (durations)
-            if len(self._timestamps) > 2:
+            if len(self._timestamps) > 1:
                 self._tune(current_point, step)
 
     def exit(self):
@@ -116,7 +103,7 @@ class Tuner(object):
             # print(self.avg_count)
             if self.avg_duration is None:
                 self.avg_duration = avg_step_duration
-            elif avg_step_duration < (self.avg_duration * (1 + self.tune_thres)):
+            elif avg_step_duration <= (self.avg_duration * (1 + self.tune_thres)):
                 # print("[Tunner] additive-increase")
                 # print("self.avg_duration")
                 # print(self.avg_duration)
@@ -132,41 +119,27 @@ class Tuner(object):
                 self._comm.broadcast(next_point)
                 # print("[Tunner] exit point 3")
             
-            elif avg_step_duration > (self.avg_duration * (1 + self.tune_thres)):
+            elif avg_step_duration > (self.avg_duration * (1 + self.tune_thres)) and avg_step_duration <= (self.avg_duration * (1 + self.ss_thres)):
                 # print("[Tunner] multiplicative-decrease")
-                # throughput degradation larger than threshold, possibly networking status change
                 next_point = current_point
                 next_point["credit"] = next_point["credit"] * self.avg_duration / avg_step_duration # multiplicative-decrease
-                next_point["step"] = step + 1 # tune in next 2 iter
+                if next_point["credit"] < next_point["partition"]:
+                    next_point["credit"] = next_point["partition"]
+                next_point["step"] = step + 1 # tune in next iter
 
-                self.avg_duration = None
-                self.avg_count = 0
+                self.avg_duration = avg_step_duration
+                self.avg_count = 1
 
                 self._comm.broadcast(next_point)
-        #     print("[Tunner] exit point 3")
-        # print("[Tunner] _tune(): done")
-            # point = {}
-            # for k in current_point:
-            #     if k == "step":
-            #         continue
+            else:
+                # print("[Tunner] slow-start")
+                # throughput degradation larger than ss_thres, possibly networking status change
+                next_point = current_point
+                next_point["credit"] = next_point["partition"] # slow-start
+                next_point["step"] = step + 1 # tune in next iter
 
-            #     # credit and partition is in unit of Million in tuning algorithm.
-            #     point[k] = current_point[k] / float(10 ** 6)
+                self.avg_duration = avg_step_duration
+                self.avg_count = 1
 
-            # self._tuner.put(point, avg_step_duration)
-            # next_point, stop = self._tuner.step()
-            # self.stopped = stop
+                self._comm.broadcast(next_point)
 
-            # if stop:
-            #     all_points = self._tuner.get()
-            #     for k, v in all_points.items():
-            #         all_points[k] = float('%.3f' % (1 / v))
-            #     self._logger.info("config steptime (steps/sec) map {}".format(all_points))
-
-            # if next_point is not None:
-            #     for k in next_point:
-            #         # credit and partition is in unit of Million in tuning algorithm.
-            #         next_point[k] = int(next_point[k] * (10**6))
-            #     next_point["step"] = step + 10
-            #     # broadcast
-            #     self._comm.broadcast(next_point)
