@@ -49,6 +49,7 @@ class Tuner(object):
         self.avg_count = 0
         self.tune_thres = float(os.environ.get('BYTESCHEDULER_TUNE_THRES', 0.0))
         self.ss_thres = float(os.environ.get('SLOW_START_THRES', 1.6667))
+        self.collect_freq = int(os.environ.get('COLLECT_FREQ', 2))
 
     def next_point(self):
         """Core will call this function at the beginning of each step
@@ -75,7 +76,7 @@ class Tuner(object):
             self._timestamps.append(time.time())
 
             # require at least 2 timestamps to calculating differences (durations)
-            if len(self._timestamps) > 1:
+            if len(self._timestamps) > self.collect_freq:
                 self._tune(current_point, step)
 
     def exit(self):
@@ -132,7 +133,7 @@ class Tuner(object):
 
                 self._comm.broadcast(next_point)
             else:
-                # print("[Tunner] slow-start")
+                print("[Tunner] slow-start-------------------------------------------------------------------")
                 # throughput degradation larger than ss_thres, possibly networking status change
                 next_point = current_point
                 next_point["credit"] = next_point["partition"] # slow-start
