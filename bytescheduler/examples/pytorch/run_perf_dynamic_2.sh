@@ -16,7 +16,7 @@ export BYTESCHEDULER_ROOT_PORT=58889
 export CUDA_VISIBLE_DEVICES=1
 
 export SLOW_START_THRES=1.2
-export COLLECT_FREQ=2
+# export COLLECT_FREQ=2
 
 cround=75
 # for model in vgg16 resnet50 resnet101 resnet152 densenet121 densenet201 densenet169 
