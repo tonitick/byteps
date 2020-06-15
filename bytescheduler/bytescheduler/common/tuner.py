@@ -47,9 +47,11 @@ class Tuner(object):
 
         self.avg_duration = None
         self.avg_count = 0
+        self.last_duration_before_increased = None
+
         self.tune_thres = float(os.environ.get('BYTESCHEDULER_TUNE_THRES', 0.0))
-        self.ss_thres = float(os.environ.get('SLOW_START_THRES', 1.6667))
-        self.collect_freq = int(os.environ.get('COLLECT_FREQ', 2))
+        self.ss_thres = float(os.environ.get('SLOW_START_THRES', 1.5))
+        self.collect_freq = int(os.environ.get('COLLECT_FREQ', 1))
 
     def next_point(self):
         """Core will call this function at the beginning of each step
@@ -87,60 +89,55 @@ class Tuner(object):
         # print("[Tunner] _tune(): step = %d"%(step))
         """Run one step tuning."""
         step_durations = []
-        # print("[Tunner] len(self._timestamps) = %d"%(len(self._timestamps)))
-        # print(self._timestamps)
         
         # calculate durations
         for i in range(len(self._timestamps) - 1):
             step_durations.append(self._timestamps[i + 1] - self._timestamps[i])
-            # continue
-        # print(step_durations)
+        
         if step_durations:
-            # next_point = None
             self._timestamps = []
             avg_step_duration = sum(step_durations) / len(step_durations)
             self.avg_count = self.avg_count + len(step_durations)
-            # print("[Tunner] self.avg_count")
-            # print(self.avg_count)
             if self.avg_duration is None:
                 self.avg_duration = avg_step_duration
+                self.avg_count = 1
+            
             elif avg_step_duration <= (self.avg_duration * (1 + self.tune_thres)):
                 # print("[Tunner] additive-increase")
-                # print("self.avg_duration")
-                # print(self.avg_duration)
                 self.avg_duration = (self.avg_duration * self.avg_count + avg_step_duration * len(step_durations)) / (self.avg_count + len(step_durations))
                 self.avg_count = self.avg_count + len(step_durations)
-                # print("[Tunner] exit point 1")
+
                 next_point = current_point
-                # print("next_point")
-                # print(next_point)
                 next_point["credit"] = next_point["credit"] + next_point["partition"] # additive-increase
                 next_point["step"] = step + 1 # tune in next 2 iter
-                # print("[Tunner] exit point 2")
                 self._comm.broadcast(next_point)
-                # print("[Tunner] exit point 3")
             
-            elif avg_step_duration > (self.avg_duration * (1 + self.tune_thres)) and avg_step_duration <= (self.avg_duration * (1 + self.ss_thres)):
-                # print("[Tunner] multiplicative-decrease")
-                next_point = current_point
-                next_point["credit"] = next_point["credit"] * self.avg_duration / avg_step_duration # multiplicative-decrease
-                if next_point["credit"] < next_point["partition"]:
-                    next_point["credit"] = next_point["partition"]
-                next_point["step"] = step + 1 # tune in next iter
+            elif avg_step_duration > (self.avg_duration * (1 + self.tune_thres)):
+                if self.last_duration_before_increased == None:
+                    self.last_duration_before_increased = self.avg_duration
+                
+                if avg_step_duration <= (self.last_duration_before_increased * (1 + self.ss_thres)):
+                    # print("[Tunner] multiplicative-decrease")
+                    next_point = current_point
+                    next_point["credit"] = next_point["credit"] * self.avg_duration / avg_step_duration # multiplicative-decrease
+                    if next_point["credit"] < next_point["partition"]:
+                        next_point["credit"] = next_point["partition"]
+                    next_point["step"] = step + 1 # tune in next iter
 
-                self.avg_duration = avg_step_duration
-                self.avg_count = 1
+                    self.avg_duration = avg_step_duration
+                    self.avg_count = 1
 
-                self._comm.broadcast(next_point)
-            else:
-                print("[Tunner] slow-start-------------------------------------------------------------------")
-                # throughput degradation larger than ss_thres, possibly networking status change
-                next_point = current_point
-                next_point["credit"] = next_point["partition"] # slow-start
-                next_point["step"] = step + 1 # tune in next iter
+                    self._comm.broadcast(next_point)
+                else:
+                    print("[Tunner] slow-start-------------------------------------------------------------------")
+                    self.last_duration_before_increased = None
+                    # throughput degradation larger than ss_thres, possibly networking status change
+                    next_point = current_point
+                    next_point["credit"] = next_point["partition"] # slow-start
+                    next_point["step"] = step + 1 # tune in next iter
 
-                self.avg_duration = avg_step_duration
-                self.avg_count = 1
+                    self.avg_duration = avg_step_duration
+                    self.avg_count = 1
 
-                self._comm.broadcast(next_point)
+                    self._comm.broadcast(next_point)
 
