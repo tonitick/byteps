@@ -144,6 +144,8 @@ class Tuner(object):
                 # throughput degradation larger than threshold, possibly networking status change
                 next_point = current_point
                 next_point["credit"] = next_point["credit"] * self.avg_duration / avg_step_duration # multiplicative-decrease
+                if next_point["credit"] < next_point["partition"]:
+                    next_point["credit"] = next_point["partition"]
                 next_point["step"] = step + 1 # tune in next 2 iter
 
                 self.avg_duration = None
