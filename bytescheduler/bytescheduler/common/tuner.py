@@ -11,7 +11,7 @@ import logging
 import time
 from .search import BayesianSearch
 from .comm import create_comm
-
+import random
 
 class Tuner(object):
     """ Tuning partition size and credit size using Bayesian Optimization."""
@@ -62,6 +62,9 @@ class Tuner(object):
         self.avg_duration = None
         self.avg_count = 0
         self.tune_thres = float(os.environ.get('BYTESCHEDULER_TUNE_THRES', 0.05))
+
+        self.upper = 40000000
+        self.lower = 34000000
 
     def next_point(self):
         """Core will call this function at the beginning of each step
@@ -127,6 +130,10 @@ class Tuner(object):
                 # print("next_point")
                 # print(next_point)
                 next_point["credit"] = next_point["credit"] + next_point["partition"] # additive-increase
+                if next_point["credit"] > self.upper:
+                    next_point["credit"] = random.randint(self.lower, self.upper)
+                    self.avg_duration = None
+                    self.avg_count = 0
                 next_point["step"] = step + 1 # tune in next 2 iter
                 # print("[Tunner] exit point 2")
                 self._comm.broadcast(next_point)
