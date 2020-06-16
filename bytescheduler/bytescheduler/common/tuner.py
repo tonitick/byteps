@@ -65,7 +65,8 @@ class Tuner(object):
 
         self.upper = 40000000
         self.lower = 34000000
-
+        self.upper_2 = 7000
+        self.lowe_2 = 9000
     def next_point(self):
         """Core will call this function at the beginning of each step
         None means no point to try and the scheduler will use existing partition and credit settings
@@ -145,7 +146,7 @@ class Tuner(object):
                 next_point = current_point
                 next_point["credit"] = next_point["credit"] * self.avg_duration / avg_step_duration # multiplicative-decrease
                 if next_point["credit"] < next_point["partition"]:
-                    next_point["credit"] = next_point["partition"]
+                    next_point["credit"] = random.randint(self.lower_2, self.upper_2)
                 next_point["step"] = step + 1 # tune in next 2 iter
 
                 self.avg_duration = None
